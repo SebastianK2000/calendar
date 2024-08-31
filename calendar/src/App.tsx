@@ -16,6 +16,7 @@ export default () => (
   <Paper>
     <Scheduler
       data={schedulerData}
+      locale="pl-PL"
     >
       <ViewState
         currentDate={currentDate}
