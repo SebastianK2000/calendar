@@ -10,6 +10,7 @@ import {
   Toolbar,
   DateNavigator,
   ViewSwitcher,
+  AllDayPanel,
 } from '@devexpress/dx-react-scheduler-material-ui';
 
 import { EditingState, IntegratedEditing, ChangeSet } from '@devexpress/dx-react-scheduler';
@@ -24,6 +25,16 @@ interface Event {
   title: string;
 }
 
+const convertToDate = (timestamp: Timestamp | string | undefined): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  if (typeof timestamp === 'string') {
+    return new Date(timestamp);
+  }
+  return new Date();
+};
+
 const Calendar = () => {
   const [currentView, setCurrentView] = useState<string>('Month');
   const [data, setData] = useState<Event[]>([]);
@@ -36,24 +47,8 @@ const Calendar = () => {
         const data = doc.data();
         console.log("Raw event data from Firestore:", data);
 
-        let startDate: Date;
-        let endDate: Date;
-
-        if (data.startDate instanceof Timestamp) {
-          startDate = data.startDate.toDate();
-        } else if (typeof data.startDate === 'string') {
-          startDate = new Date(data.startDate);
-        } else {
-          startDate = new Date();
-        }
-
-        if (data.endDate instanceof Timestamp) {
-          endDate = data.endDate.toDate();
-        } else if (typeof data.endDate === 'string') {
-          endDate = new Date(data.endDate);
-        } else {
-          endDate = new Date();
-        }
+        const startDate = convertToDate(data.startDate);
+        const endDate = convertToDate(data.endDate);
 
         console.log("Processed startDate:", startDate);
         console.log("Processed endDate:", endDate);
@@ -112,7 +107,7 @@ const Calendar = () => {
 
     if (changed) {
       try {
-        Object.keys(changed).forEach(async (id) => {
+        for (const id of Object.keys(changed)) {
           const eventDoc = doc(collection(db, 'events'), id);
           console.log("Updating event with ID:", id, "Changes:", changed[id]);
 
@@ -136,7 +131,7 @@ const Calendar = () => {
               event.id === id ? { ...event, ...updatedChanges, startDate, endDate } : event
             )
           );
-        });
+        }
       } catch (error) {
         console.error("Błąd podczas aktualizowania wydarzenia:", error);
       }
@@ -168,6 +163,7 @@ const Calendar = () => {
       <DayView startDayHour={0} endDayHour={24} />
       <WeekView startDayHour={0} endDayHour={24} />
       <MonthView />
+      <AllDayPanel />
       <Appointments />
       <AppointmentForm />
     </Scheduler>
