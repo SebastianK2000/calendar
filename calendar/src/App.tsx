@@ -82,6 +82,10 @@ const Calendar = () => {
         const newEvent = { ...added };
         console.log("Adding new event:", newEvent);
 
+        if (!newEvent.title) {
+          newEvent.title = 'Wydarzenie bez nazwy';
+        }
+
         const startDate = newEvent.startDate ? new Date(newEvent.startDate) : new Date();
         const endDate = newEvent.endDate ? new Date(newEvent.endDate) : new Date();
 
@@ -112,6 +116,11 @@ const Calendar = () => {
           console.log("Updating event with ID:", id, "Changes:", changed[id]);
 
           const updatedChanges = changed[id];
+
+          if (!updatedChanges.title) {
+            updatedChanges.title = 'Wydarzenie bez nazwy';
+          }
+
           const startDate = updatedChanges.startDate ? new Date(updatedChanges.startDate) : new Date();
           const endDate = updatedChanges.endDate ? new Date(updatedChanges.endDate) : new Date();
 
