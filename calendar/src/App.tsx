@@ -76,30 +76,21 @@ const Calendar = () => {
 
   const commitChanges = async (changes: ChangeSet) => {
     const { added, changed, deleted } = changes;
-
+  
     if (added) {
       try {
         const newEvent = { ...added };
         console.log("Adding new event:", newEvent);
-
-        if (!newEvent.title) {
-          newEvent.title = 'Wydarzenie bez nazwy';
-        }
-
+  
         const startDate = newEvent.startDate ? new Date(newEvent.startDate) : new Date();
         const endDate = newEvent.endDate ? new Date(newEvent.endDate) : new Date();
-
-        console.log("Processed startDate for new event:", startDate);
-        console.log("Processed endDate for new event:", endDate);
-        console.log("Is startDate valid?", !isNaN(startDate.getTime()));
-        console.log("Is endDate valid?", !isNaN(endDate.getTime()));
-
+  
         const docRef = await addDoc(collection(db, 'events'), {
           startDate: Timestamp.fromDate(startDate),
           endDate: Timestamp.fromDate(endDate),
-          title: newEvent.title,
+          title: newEvent.title || 'Wydarzenie bez nazwy',
         });
-
+  
         setData((prevData) => [
           ...prevData,
           { ...newEvent, id: docRef.id, startDate, endDate, title: newEvent.title }
@@ -108,36 +99,34 @@ const Calendar = () => {
         console.error("Błąd podczas dodawania nowego wydarzenia:", error);
       }
     }
-
+  
     if (changed) {
       try {
         for (const id of Object.keys(changed)) {
+          const updatedChanges = { ...changed[id] };
           const eventDoc = doc(collection(db, 'events'), id);
-          console.log("Updating event with ID:", id, "Changes:", changed[id]);
-
-          const updatedChanges = changed[id];
-
-          if (!updatedChanges.title) {
-            updatedChanges.title = 'Wydarzenie bez nazwy';
-          }
-
-          const startDate = updatedChanges.startDate ? new Date(updatedChanges.startDate) : new Date();
-          const endDate = updatedChanges.endDate ? new Date(updatedChanges.endDate) : new Date();
-
-          console.log("Processed startDate for update:", startDate);
-          console.log("Processed endDate for update:", endDate);
-          console.log("Is startDate valid?", !isNaN(startDate.getTime()));
-          console.log("Is endDate valid?", !isNaN(endDate.getTime()));
-
+  
+          const existingEvent = data.find(event => event.id === id);
+          if (!existingEvent) continue;
+  
+          const startDate = updatedChanges.startDate
+            ? new Date(updatedChanges.startDate)
+            : existingEvent.startDate;
+          const endDate = updatedChanges.endDate
+            ? new Date(updatedChanges.endDate)
+            : existingEvent.endDate;
+  
           await updateDoc(eventDoc, {
-            ...updatedChanges,
             startDate: Timestamp.fromDate(startDate),
             endDate: Timestamp.fromDate(endDate),
+            title: updatedChanges.title || existingEvent.title,
           });
-
+  
           setData((prevData) =>
             prevData.map((event) =>
-              event.id === id ? { ...event, ...updatedChanges, startDate, endDate } : event
+              event.id === id
+                ? { ...event, ...updatedChanges, startDate, endDate }
+                : event
             )
           );
         }
@@ -145,11 +134,10 @@ const Calendar = () => {
         console.error("Błąd podczas aktualizowania wydarzenia:", error);
       }
     }
-
+  
     if (deleted !== undefined) {
       try {
         const eventDoc = doc(collection(db, 'events'), deleted as string);
-        console.log("Deleting event with ID:", deleted);
         await deleteDoc(eventDoc);
         setData((prevData) => prevData.filter((event) => event.id !== deleted));
       } catch (error) {
@@ -157,6 +145,7 @@ const Calendar = () => {
       }
     }
   };
+  
 
   return (
     <Scheduler data={data} locale="pl-PL">
