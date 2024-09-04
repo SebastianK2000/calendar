@@ -1,7 +1,7 @@
 # calendar
 
 ## Link do zahostowanej strony: 
-https://66d766207a0869af50628279--delightful-pasca-6e8b88.netlify.app
+https://66d81c14a7edd45d9670d8c8--calendar-sebastiank2000.netlify.app
 
 ## Link do mojej małej dokumentacji niektórych z kroków: 
 https://docs.google.com/document/d/1LWCtqZ0inpSRs41c8jYxJWSob5xosRV7NDJKFE3-QHo/edit
