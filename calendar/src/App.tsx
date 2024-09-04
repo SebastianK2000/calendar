@@ -22,8 +22,8 @@ interface Event {
   startDate: Date;
   endDate: Date;
   title: string;
-  rRule?: string;  // Dodane pole rRule dla powtarzających się wydarzeń
-  exDate?: string; // Dodane pole exDate dla wyjątków w powtarzających się wydarzeniach
+  rRule?: string;
+  exDate?: string;
 }
 
 const convertToDate = (timestamp: Timestamp | string | undefined): Date => {
@@ -60,7 +60,6 @@ const Calendar = () => {
           title: data.title || 'Untitled Event',
         };
 
-        // Jeśli istnieje rRule, przetwórz powtarzające się wydarzenia
         if (data.rRule) {
           const rruleSet = new RRuleSet();
           rruleSet.rrule(new RRule({
@@ -106,8 +105,8 @@ const Calendar = () => {
           startDate: Timestamp.fromDate(startDate),
           endDate: Timestamp.fromDate(endDate),
           title: newEvent.title || 'Wydarzenie bez nazwy',
-          rRule: newEvent.rRule || '', // Zapisywanie reguły powtarzania
-          exDate: newEvent.exDate || '', // Zapisywanie wyjątków, jeśli są
+          rRule: newEvent.rRule || '',
+          exDate: newEvent.exDate || '',
         });
   
         setData((prevData) => [
