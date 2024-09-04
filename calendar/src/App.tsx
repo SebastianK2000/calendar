@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-
 import {
   Scheduler,
   DayView,
@@ -12,17 +11,19 @@ import {
   ViewSwitcher,
   AllDayPanel,
 } from '@devexpress/dx-react-scheduler-material-ui';
-
 import { EditingState, IntegratedEditing, ChangeSet } from '@devexpress/dx-react-scheduler';
 import { ViewState } from '@devexpress/dx-react-scheduler';
 import { db } from './firebase/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import { RRule, RRuleSet } from 'rrule';
 
 interface Event {
   id: string;
   startDate: Date;
   endDate: Date;
   title: string;
+  rRule?: string;  // Dodane pole rRule dla powtarzających się wydarzeń
+  exDate?: string; // Dodane pole exDate dla wyjątków w powtarzających się wydarzeniach
 }
 
 const convertToDate = (timestamp: Timestamp | string | undefined): Date => {
@@ -43,25 +44,41 @@ const Calendar = () => {
     try {
       console.log("Fetching data from Firestore...");
       const querySnapshot = await getDocs(collection(db, 'events'));
-      const events: Event[] = querySnapshot.docs.map((doc) => {
+      const events: Event[] = [];
+
+      querySnapshot.docs.forEach((doc) => {
         const data = doc.data();
         console.log("Raw event data from Firestore:", data);
 
         const startDate = convertToDate(data.startDate);
         const endDate = convertToDate(data.endDate);
 
-        console.log("Processed startDate:", startDate);
-        console.log("Processed endDate:", endDate);
-        console.log("Is startDate valid?", !isNaN(startDate.getTime()));
-        console.log("Is endDate valid?", !isNaN(endDate.getTime()));
-
-        return {
+        const baseEvent = {
           id: doc.id,
           startDate,
           endDate,
           title: data.title || 'Untitled Event',
         };
-      }) as Event[];
+
+        // Jeśli istnieje rRule, przetwórz powtarzające się wydarzenia
+        if (data.rRule) {
+          const rruleSet = new RRuleSet();
+          rruleSet.rrule(new RRule({
+            ...RRule.parseString(data.rRule),
+            dtstart: startDate,
+          }));
+
+          rruleSet.all().forEach((date) => {
+            events.push({
+              ...baseEvent,
+              startDate: date,
+              endDate: new Date(date.getTime() + (endDate.getTime() - startDate.getTime())),
+            });
+          });
+        } else {
+          events.push(baseEvent);
+        }
+      });
 
       console.log("Processed event data:", events);
       setData(events);
@@ -89,6 +106,8 @@ const Calendar = () => {
           startDate: Timestamp.fromDate(startDate),
           endDate: Timestamp.fromDate(endDate),
           title: newEvent.title || 'Wydarzenie bez nazwy',
+          rRule: newEvent.rRule || '', // Zapisywanie reguły powtarzania
+          exDate: newEvent.exDate || '', // Zapisywanie wyjątków, jeśli są
         });
   
         setData((prevData) => [
@@ -120,6 +139,8 @@ const Calendar = () => {
             startDate: Timestamp.fromDate(startDate),
             endDate: Timestamp.fromDate(endDate),
             title: updatedChanges.title || existingEvent.title,
+            rRule: updatedChanges.rRule || existingEvent.rRule || '',
+            exDate: updatedChanges.exDate || existingEvent.exDate || '',
           });
   
           setData((prevData) =>
@@ -146,7 +167,6 @@ const Calendar = () => {
     }
   };
   
-
   return (
     <Scheduler data={data} locale="pl-PL">
       <ViewState
